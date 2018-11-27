@@ -1,20 +1,44 @@
-all: report.html
+# make with data download
+from_scratch: report_from_scratch
 
+# make without data download
+all: report_all
+
+# clean with data download
+clean_from_scratch:
+	rm -rf ./data/
+	rm -rf ./images/
+	rm -rf ./reports/
+
+# clean without data download
 clean:
-	rm -f words.txt histogram.tsv histogram.png report.md report.html
+	rm -rf ./images/
+	rm -rf ./reports/
 
-report.html: report.rmd histogram.tsv histogram.png
-	Rscript -e 'rmarkdown::render("$<")'
+# download data
+data: ./src/python/download_tree_inventory.py
+	mkdir -p ./data/
+	python $<
 
-histogram.png: histogram.tsv
-	Rscript -e 'library(ggplot2); qplot(Length, Freq, data=read.delim("$<")); ggsave("$@")'
-	rm Rplots.pdf
+# clean_data
+clean_data: ./csv_street_trees.zip
+	rm csv_street_trees.zip
 
-histogram.tsv: histogram.r words.txt
+# generate data for plotting
+count_genus: ./src/r/genus_count.r
 	Rscript $<
 
-words.txt: /usr/share/dict/words
-	cp $< $@
+# plot genus_count
+plot_genus: ./src/r/plot_genus.r
+	mkdir -p ./images/
+	Rscript $<
 
-# words.txt:
-#	Rscript -e 'download.file("http://svnweb.freebsd.org/base/head/share/dict/web2?view=co", destfile = "words.txt", quiet = TRUE)'
+# generate HTML from scratch
+report_from_scratch: ./src/r/generate_reports.r data clean_data count_genus plot_genus
+	mkdir -p ./reports/
+	Rscript $<
+
+# generate HTML with downloaded data
+report_all: ./src/r/generate_reports.r count_genus plot_genus
+	mkdir -p ./reports/
+	Rscript $<

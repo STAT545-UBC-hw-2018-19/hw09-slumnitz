@@ -1,0 +1,88 @@
+---
+title: "Vancouver Tree Inventory"
+author: "Stefanie Lumnitz"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+params:
+    fileName:
+        value: x
+---
+
+```{r, echo=FALSE}
+# load libraries
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(DT)))
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(leaflet))
+library(knitr)
+library(markdown)
+library(rmarkdown)
+```
+
+```{r load-genus, include=FALSE}
+# define Variables and file names
+newBaseName <-paste(gsub(".png", basename(fileName), replacement = "")) # e.g. "StreetTrees_WestPointGrey"
+newFileName <- paste(gsub(".png", gsub("StreetTrees_", # e.g. "WestPointGrey
+																			 x= basename(fileName),
+																			 replacement = ""),
+													replacement = ""))
+tree_data <- paste0("../../data/", newBaseName, ".csv") # path to csv
+area_data <- paste0("../../data/", newBaseName, ".tsv") # path to .tsv
+current_png <- paste0("../../images/", newBaseName, ".png") # path to png
+
+genus_data <- read.delim(area_data, header = TRUE) # load .tsv
+trees <- read.csv(tree_data, stringsAsFactors = FALSE) %>% # load .csv
+	select(lon="LONGITUDE",
+		   lat="LATITUDE",
+		   std_street="STD_STREET",
+		   on_street="ON_STREET",
+		   neighbourhood="NEIGHBOURHOOD_NAME",
+		   height="HEIGHT_RANGE_ID",
+		   diameter="DIAMETER",
+		   date_planted="DATE_PLANTED",
+		   genus="GENUS_NAME",
+		   species="SPECIES_NAME",
+		   common_name="COMMON_NAME") %>% 
+	filter(!(lat==0)) %>% 
+	transform(date_planted = as.Date(as.character(date_planted), "%Y%m%d"))
+```
+
+
+Data in this report can be accessed through the [Vancouver Street Trees](https://vancouvertrees.shinyapps.io/vancouver_street_trees/) inventory.
+
+<br><br>
+
+## Tree genus report for `r newBaseName`
+
+### Most common genus
+
+The most common genus in `r newFileName` is `r with(genus_data, genus[which.max(number)])` with `r max(genus_data$number)` observaitions.
+
+<br><br>
+
+```{r, echo=FALSE, fig.height=8}
+include_graphics(current_png)
+```
+
+<br><br>
+
+### Tree species overview
+
+What tree species at the genus level can be found in `r newBaseName`:
+
+```{r, echo=FALSE}
+datatable(trees)
+```
+
+<br><br>
+
+And where are the trees:
+
+```{r}
+trees %>% 
+	leaflet() %>% addTiles() %>%
+    		fitBounds(~min(lon), ~min(lat), ~max(lon), ~max(lat)) %>% 
+    		addCircles(lng = ~lon, lat = ~lat, label=~as.character(genus))
+```
+
