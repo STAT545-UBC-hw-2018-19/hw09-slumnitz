@@ -54,11 +54,11 @@ The difficulty downloading the data was that the data can only be downloaded fro
 * `make from_scratch` and 
 * `clean from_scratch` commands.
 
-#### Without data download, relying on R
+#### Without data download, relying only on R
 
 If you are having difficulties installing Python with anaconda and setting up your R environment you can simply use the data I provide for this example. I provided the commands 
 
-*`make all` and 
+* `make all` and 
 * `make clean` 
 
 for all users who do not want to bother working in two programming languages.
